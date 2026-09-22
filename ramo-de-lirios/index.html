@@ -55,11 +55,50 @@
     opacity:1;
     transform:translateX(-50%) translateY(0);
   }
+
+  .music-btn{
+    position:fixed;
+    right:max(18px, env(safe-area-inset-right, 0px));
+    bottom:max(18px, env(safe-area-inset-bottom, 0px));
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    border:1px solid rgba(255,214,150,0.35);
+    background:rgba(10,14,30,0.55);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    box-shadow:0 0 18px rgba(255,180,90,0.22), inset 0 0 10px rgba(255,200,120,0.08);
+    color:#ffe9b6;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    z-index:6;
+    opacity:0;
+    transform:translateY(6px);
+    animation:btnfade 1s ease 0.6s forwards;
+    transition:box-shadow 0.3s ease, background 0.3s ease, transform 0.15s ease;
+  }
+  @keyframes btnfade{ to{ opacity:1; transform:translateY(0); } }
+  .music-btn:hover{ box-shadow:0 0 24px rgba(255,190,110,0.35), inset 0 0 10px rgba(255,200,120,0.12); }
+  .music-btn:active{ transform:scale(0.92); }
+  .music-btn:disabled{ opacity:0.35; cursor:default; box-shadow:none; }
+  .music-btn .icon{ width:22px; height:22px; fill:currentColor; }
+  .music-btn .icon-play{ margin-left:3px; }       /* optically center the triangle */
+  .music-btn .icon-pause{ display:none; }
+  .music-btn.playing .icon-play{ display:none; }
+  .music-btn.playing .icon-pause{ display:block; }
 </style>
 </head>
 <body>
 <canvas id="sky" role="img" aria-label="Cielo nocturno animado con estrellas titilantes y un ramo de lirios floreciendo"></canvas>
 <div class="message" id="message">Para mi flor favorita. 💛</div>
+<audio id="song" src="cancion.mp3" loop preload="metadata"></audio>
+<button id="music-toggle" class="music-btn" type="button" aria-pressed="false" aria-label="Reproducir canción">
+  <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+  <svg class="icon icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+</button>
 
 <script>
 (function(){
@@ -1197,6 +1236,30 @@ function restartBloom(){
   messageShown = false;
   messageEl.classList.remove('show');
 }
+
+/* ============ MUSIC BUTTON ============ */
+const musicBtn = document.getElementById('music-toggle');
+const song = document.getElementById('song');
+
+function setPlayingUI(isPlaying){
+  musicBtn.classList.toggle('playing', isPlaying);
+  musicBtn.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
+  musicBtn.setAttribute('aria-label', isPlaying ? 'Pausar canción' : 'Reproducir canción');
+}
+musicBtn.addEventListener('click', function(){
+  if(song.paused){
+    const p = song.play();
+    if(p && p.catch) p.catch(function(){ /* blocked by the browser or file missing: UI stays paused */ });
+  } else {
+    song.pause();
+  }
+});
+song.addEventListener('play', function(){ setPlayingUI(true); });
+song.addEventListener('pause', function(){ setPlayingUI(false); });
+song.addEventListener('error', function(){
+  musicBtn.disabled = true;
+  musicBtn.title = 'No se pudo cargar cancion.mp3 (¿sigue junto al index.html?)';
+});
 
 window.addEventListener('resize', resize);
 canvas.addEventListener('click', restartBloom);
